@@ -22,11 +22,11 @@ namespace CGL
     }
     for(int i = 0;i < points.size() - 1;i ++){
       Vector2D newPoint = Vector2D(0,0);
-      newPoint.x = t * points[i].x + (1 - t) * points[i].x;
-      newPoint.y = t * points[i].y + (1 - t) * points[i].y;
+      newPoint.x = t * points[i].x + (1 - t) * points[i + 1].x;
+      newPoint.y = t * points[i].y + (1 - t) * points[i + 1].y;
       res.push_back(newPoint);
     }
-    res = evaluateStep(res);
+    evaluateStep(res);
     return res;
   }
 
