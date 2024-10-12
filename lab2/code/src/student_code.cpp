@@ -16,10 +16,10 @@ namespace CGL
   std::vector<Vector2D> BezierCurve::evaluateStep(std::vector<Vector2D> const &points)
   { 
     // TODO Part 1.
-    vector<Vector2D> res;
     if (points.size() <= 1){
       return points;
     }
+    vector<Vector2D>res;
     for(int i = 0;i < points.size() - 1;i ++){
       Vector2D newPoint = Vector2D(0,0);
       newPoint.x = t * points[i].x + (1 - t) * points[i + 1].x;
@@ -41,7 +41,19 @@ namespace CGL
   std::vector<Vector3D> BezierPatch::evaluateStep(std::vector<Vector3D> const &points, double t) const
   {
     // TODO Part 2.
-    return std::vector<Vector3D>();
+    if (points.size() <= 1){
+      return points;
+    }
+    vector<Vector3D> res;
+    for (int i = 0;i < points.size() - 1;i ++){
+      Vector3D newPoint = Vector3D(0,0,0);
+      newPoint.x = points[i].x * t + points[i + 1].x * (1 - t);
+      newPoint.y = points[i].y * t + points[i + 1].y * (1 - t);
+      newPoint.z = points[i].z * t + points[i + 1].z * (1 - t);
+      res.push_back(newPoint);
+    }
+    evaluateStep(res,t);
+    return res;
   }
 
   /**
@@ -54,7 +66,12 @@ namespace CGL
   Vector3D BezierPatch::evaluate1D(std::vector<Vector3D> const &points, double t) const
   {
     // TODO Part 2.
-    return Vector3D();
+    // 不需要保存中间控制点
+    vector<Vector3D>res = points;
+    while(res.size() > 1){
+      res = evaluateStep(res,t);
+    }
+    return res[0];
   }
 
   /**
@@ -67,7 +84,15 @@ namespace CGL
   Vector3D BezierPatch::evaluate(double u, double v) const 
   {  
     // TODO Part 2.
-    return Vector3D();
+    vector<Vector3D> row_points;
+    Vector3D res;
+    for(int i = 0;i < controlPoints.size();i ++){
+      vector<Vector3D> points = controlPoints[i];
+      Vector3D row_point = evaluate1D(points,u);
+      row_points.push_back(row_point);
+    }
+    res = evaluate1D(row_points,v);
+    return res;
   }
 
   Vector3D Vertex::normal( void ) const
