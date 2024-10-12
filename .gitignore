@@ -1,0 +1,9 @@
+/build
+.vscode
+**/.DS_Store
+**/build/
+**/docs/
+**/bin/
+**/examples/
+**/作业报告.docx
+**/*.pdf
