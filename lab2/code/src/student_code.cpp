@@ -101,13 +101,38 @@ namespace CGL
     // Returns an approximate unit normal at this vertex, computed by
     // taking the area-weighted average of the normals of neighboring
     // triangles, then normalizing.
-    return Vector3D();
+    Vector3D v_normal;
+    // 该点对应的半边
+    HalfedgeCIter h = this -> halfedge();
+    do{
+      FaceCIter f = h -> face();
+      Vector3D a_pos = h ->vertex() -> position;
+      //得到面的法线
+      Vector3D ab,ac;
+      h = h -> next();
+      ab = h -> vertex() -> position - a_pos;
+      h = h -> next();
+      ac = h -> vertex() -> position - a_pos;
+      h = h -> next();
+      Vector3D face_normal = cross(ab,ac);
+      double weight = face_normal.norm() / 2;
+      // 加权平均（权重为面积）
+      v_normal += weight * face_normal;
+      // 遍历到下个包含该顶点的面
+      h = h -> twin() -> next();
+    }while(h != this -> halfedge());
+    return v_normal.unit();
   }
 
   EdgeIter HalfedgeMesh::flipEdge( EdgeIter e0 )
   {
     // TODO Part 4.
     // This method should flip the given edge and return an iterator to the flipped edge.
+    // 边界上的边
+    if (e0 -> isBoundary()) {
+      return e0;
+    }
+    
     return EdgeIter();
   }
 
