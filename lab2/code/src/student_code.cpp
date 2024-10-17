@@ -128,12 +128,71 @@ namespace CGL
   {
     // TODO Part 4.
     // This method should flip the given edge and return an iterator to the flipped edge.
-    // 边界上的边
+    // 边界上的边不应该翻转
     if (e0 -> isBoundary()) {
       return e0;
     }
+    // before flip
+    // halfedges（从e0开始构造）
+    HalfedgeIter h0 = e0 -> halfedge();
+    HalfedgeIter h1 = h0 -> next(); 
+    HalfedgeIter h2 = h1 -> next();
+    HalfedgeIter h3 = h0 -> twin();
+    HalfedgeIter h4 = h3 -> next();
+    HalfedgeIter h5 = h4 -> next();
+    HalfedgeIter h6 = h1 -> twin();
+    HalfedgeIter h7 = h2 -> twin();
+    HalfedgeIter h8 = h4 -> twin();
+    HalfedgeIter h9 = h5 -> twin();
     
-    return EdgeIter();
+    // vertexs
+    VertexIter v0 = h0 -> vertex();
+    VertexIter v1 = h3 -> vertex();
+    VertexIter v2 = h2 -> vertex();
+    VertexIter v3 = h5 -> vertex();
+
+    // edges
+    EdgeIter e1 = h1 -> edge();
+    EdgeIter e2 = h2 -> edge();
+    EdgeIter e3 = h4 -> edge();
+    EdgeIter e4 = h5 -> edge(); 
+
+    // faces
+    FaceIter f0 = h0 -> face();
+    FaceIter f1 = h3 -> face();
+
+    // after flip
+    // halfedges
+    // outside元素的next和face应该不变
+    h0 -> setNeighbors(h1,h3,v3,e0,f0);
+    h1 -> setNeighbors(h2,h7,v2,e2,f0);
+    h2 -> setNeighbors(h0,h8,v0,e3,f0);
+    h3 -> setNeighbors(h4,h0,v2,e0,f1);
+    h4 -> setNeighbors(h5,h9,v3,e4,f1);
+    h5 -> setNeighbors(h3,h6,v1,e1,f1);
+    h6 -> setNeighbors(h6 -> next(),h5,v2,e1,h6 -> face());
+    h7 -> setNeighbors(h7 -> next(),h1,v0,e2,h7 -> face());
+    h8 -> setNeighbors(h8 -> next(),h2,v3,e3,h8 -> face());
+    h9 -> setNeighbors(h9 -> next(),h4,v1,e4,h9 -> face());
+
+    // vertexs(有多条半边可选，需要能够遍历一个面)
+    v0 -> halfedge() = h2;
+    v1 -> halfedge() = h5;
+    v2 -> halfedge() = h3;
+    v3 -> halfedge() = h0;
+
+    // edges
+    e0 -> halfedge() = h0;
+    e1 -> halfedge() = h5;
+    e2 -> halfedge() = h1;
+    e3 -> halfedge() = h2;
+    e4 -> halfedge() = h4;
+
+    // faces
+    f0 -> halfedge() = h0;
+    f1 -> halfedge() = h3;
+
+    return e0;
   }
 
   VertexIter HalfedgeMesh::splitEdge( EdgeIter e0 )
@@ -141,9 +200,90 @@ namespace CGL
     // TODO Part 5.
     // This method should split the given edge and return an iterator to the newly inserted vertex.
     // The halfedge of this vertex should point along the edge that was split, rather than the new edges.
-    return VertexIter();
-  }
+    // before split
+    // halfedges（从e0开始构造）
+    if (e0 -> isBoundary()){
+      return VertexIter();
+    }
+    HalfedgeIter h0 = e0 -> halfedge();
+    HalfedgeIter h1 = h0 -> next(); 
+    HalfedgeIter h2 = h1 -> next();
+    HalfedgeIter h3 = h0 -> twin();
+    HalfedgeIter h4 = h3 -> next();
+    HalfedgeIter h5 = h4 -> next();
+    HalfedgeIter h6 = h1 -> twin();
+    HalfedgeIter h7 = h2 -> twin();
+    HalfedgeIter h8 = h4 -> twin();
+    HalfedgeIter h9 = h5 -> twin();
+    
+    // vertexs
+    VertexIter v0 = h0 -> vertex();
+    VertexIter v1 = h3 -> vertex();
+    VertexIter v2 = h2 -> vertex();
+    VertexIter v3 = h5 -> vertex();
 
+    // edges
+    EdgeIter e1 = h1 -> edge();
+    EdgeIter e2 = h2 -> edge();
+    EdgeIter e3 = h4 -> edge();
+    EdgeIter e4 = h5 -> edge(); 
+
+    // faces
+    FaceIter f0 = h0 -> face();
+    FaceIter f1 = h3 -> face();
+
+    Vector3D v4_pos = (v1 -> position + v0 -> position) / 2;
+
+    // new elements
+    HalfedgeIter h10 = newHalfedge();
+    HalfedgeIter h11 = newHalfedge();
+    HalfedgeIter h12 = newHalfedge();
+    HalfedgeIter h13 = newHalfedge();
+    HalfedgeIter h14 = newHalfedge();
+    HalfedgeIter h15 = newHalfedge();
+
+    VertexIter v4 = newVertex();
+
+    EdgeIter e5 = newEdge();
+    EdgeIter e6 = newEdge();
+    EdgeIter e7 = newEdge();
+
+    FaceIter f2 = newFace();
+    FaceIter f3 = newFace();
+
+    // after split
+    h0 -> setNeighbors(h1,h3,v4,e0,f0);
+    h1 -> setNeighbors(h11,h6,v1,e1,f0);
+    h2 -> setNeighbors(h14,h7,v2,e2,f2);
+    h3 -> setNeighbors(h10,h0,v1,e0,f1);
+    h4 -> setNeighbors(h13,h8,v0,e3,f3);
+    h5 -> setNeighbors(h3,h9,v3,e4,f1);
+    // 6,7,8,9所有元素不变
+    h10 -> setNeighbors(h5,h13,v4,e5,f1);
+    h11 -> setNeighbors(h0,h15,v2,e7,f0);
+    h12 -> setNeighbors(h4,h14,v4,e6,f3);
+    h13 -> setNeighbors(h12,h10,v3,e5,f3);
+    h14 -> setNeighbors(h15,h12,v0,e6,f2);
+    h15 -> setNeighbors(h2,h11,v4,e7,f2);
+
+    v0 -> halfedge() = h14;
+    v1 -> halfedge() = h3;
+    v2 -> halfedge() = h2;
+    v3 -> halfedge() = h5;
+    v4 -> halfedge() = h0;
+
+    e5 -> halfedge() = h13;
+    e6 -> halfedge() = h14;
+    e7 -> halfedge() = h15;
+
+    f0 -> halfedge() = h0;
+    f1 -> halfedge() = h3;
+    f2 -> halfedge() = h14;
+    f3 -> halfedge() = h12;
+
+    v4 -> position = v4_pos;
+    return v4;
+  }
 
 
   void MeshResampler::upsample( HalfedgeMesh& mesh )
@@ -155,6 +295,7 @@ namespace CGL
     // 1. Compute new positions for all the vertices in the input mesh, using the Loop subdivision rule,
     // and store them in Vertex::newPosition. At this point, we also want to mark each vertex as being
     // a vertex of the original mesh.
+
     
     // 2. Compute the updated vertex positions associated with edges, and store it in Edge::newPosition.
     
