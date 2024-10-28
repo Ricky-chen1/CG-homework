@@ -187,17 +187,29 @@ void Camera::load_settings(string filename) {
 /**
  * This function generates a ray from camera perspective, passing through camera / sensor plane (x,y)
  */
-Ray Camera::generate_ray(double x, double y) const {
+Ray Camera::generate_ray(double x, double y) const
+{
 
   // TODO (Part 1.1):
   // compute position of the input sensor sample coordinate on the
   // canonical sensor plane one unit away from the pinhole.
   // Note: hFov and vFov are in degrees.
   //
-  
+  Vector3D shade_point(x,y,-1);
+  Vector3D direction;
+  // 将输入的图像坐标转换到相机坐标系
+  shade_point.x = shade_point.x * 2 * tan(radians(hFov) / 2) - tan(radians(hFov) / 2); // 应该先转弧度再除以2
+  shade_point.y = shade_point.y * 2 * tan(radians(vFov) / 2) - tan(radians(vFov) / 2);
+  direction = shade_point - Vector3D(0,0,0);
+  direction = c2w * direction;
 
-  return Ray(pos, Vector3D(0, 0, -1));
-
+  // 将光线方向转换到世界坐标系
+  Ray ray;
+  ray.o = pos;
+  ray.d = direction.unit();
+  ray.min_t = nClip;
+  ray.max_t = fClip;
+  return ray;
 }
 
 } // namespace CGL

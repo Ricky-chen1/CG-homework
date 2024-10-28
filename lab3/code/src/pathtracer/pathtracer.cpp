@@ -180,15 +180,24 @@ void PathTracer::raytrace_pixel(size_t x, size_t y) {
 
   // TODO (Part 5):
   // Modify your implementation to include adaptive sampling.
-  // Use the command line parameters "samplesPerBatch" and "maxTolerance"
-  int num_samples = ns_aa;          // total samples to evaluate
+  // Use the command line parameters "samplesPerBatch" and "maxTolerance"    
+
   Vector2D origin = Vector2D(x, y); // bottom left corner of the pixel
+  int num_samples = ns_aa; // total samples to evaluate
+  Vector3D total_radiance = Vector3D(0, 0, 0);
+  for(int i = 0;i < num_samples;i ++){
+    // 在方形像素上随机均匀采样
+    Vector2D random = gridSampler -> get_sample();
+    random.x += origin.x;
+    random.y += origin.y;
+    // 该路径上光线的radiance
+    Ray r = camera->generate_ray(random.x / sampleBuffer.w, random.y / sampleBuffer.h);
+    total_radiance += est_radiance_global_illumination(r);
+  }
 
-
-  sampleBuffer.update_pixel(Vector3D(0.2, 1.0, 0.8), x, y);
+  // 返回平均radiance
+  sampleBuffer.update_pixel(total_radiance / num_samples, x, y);
   sampleCountBuffer[x + y * sampleBuffer.w] = num_samples;
-
-
 }
 
 void PathTracer::autofocus(Vector2D loc) {
