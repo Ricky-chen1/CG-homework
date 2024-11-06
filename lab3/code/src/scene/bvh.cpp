@@ -149,7 +149,7 @@ namespace CGL
       {
         for (auto p = node->start; p != node->end; p++)
         {
-          // 当前包围盒图元就有相交
+          // 当前包围盒图元与光线相交
           if ((*p)->has_intersection(ray))
           {
             return true;
