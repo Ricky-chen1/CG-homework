@@ -23,6 +23,7 @@ namespace CGL
       double c = dot(r.o - o, r.o - o) - r2;
 
       double delta = b * b - 4 * a * c;
+      // 没有交点
       if (delta < 0)
       {
         return false;
@@ -30,6 +31,7 @@ namespace CGL
       t1 = (-b - sqrt(delta)) / (2 * a);
       t2 = (-b + sqrt(delta)) / (2 * a);
 
+      // 两点都不在范围内
       if (t2 < r.min_t || t1 > r.max_t)
       {
         return false;
@@ -73,7 +75,7 @@ namespace CGL
         r.max_t = t2;
       }
 
-      // t1有效（覆盖t2）
+      // t1有效时（覆盖t2）
       if (t1 <= r.max_t && t1 >= r.min_t)
       {
         r.max_t = t1;

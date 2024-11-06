@@ -90,8 +90,11 @@ namespace CGL
       double beta = cross(ap, cp).norm() / 2 / area;
       double gama = cross(bp, cp).norm() / 2 / area;
 
+      if(t >= r.min_t && t <= r.max_t){
+        r.max_t = t;
+      }
       isect->bsdf = get_bsdf();
-      isect->t = t;
+      isect->t = r.max_t;
       isect->primitive = this;
       isect->n = (alpha * n1 + beta * n2 + (1 - alpha - beta) * n3).unit();
       return true;

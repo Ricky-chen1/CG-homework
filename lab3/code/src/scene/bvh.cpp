@@ -110,8 +110,8 @@ namespace CGL
       // leaf node
       if (count <= max_leaf_size)
       {
-        node->l = nullptr;
-        node->r = nullptr;
+        node->l = NULL;
+        node->r = NULL;
         return node;
       }
       // internal node
@@ -138,29 +138,63 @@ namespace CGL
       // Take note that this function has a short-circuit that the
       // Intersection version cannot, since it returns as soon as it finds
       // a hit, it doesn't actually have to find the closest hit.
-
-      for (auto p : primitives)
+      // 与当前节点的包围盒都不相交
+      double t0 = ray.min_t, t1 = ray.max_t;
+      if (!node->bb.intersect(ray, t0, t1))
       {
-        total_isects++;
-        if (p->has_intersection(ray))
-          return true;
+        return false;
       }
-      return false;
+
+      if (node->isLeaf())
+      {
+        for (auto p = node->start; p != node->end; p++)
+        {
+          // 当前包围盒图元就有相交
+          if ((*p)->has_intersection(ray))
+          {
+            return true;
+          }
+        }
+      }
+      // 递归左右子树BVH
+      return has_intersection(ray, node->l) || has_intersection(ray, node->r);
     }
 
     bool BVHAccel::intersect(const Ray &ray, Intersection *i, BVHNode *node) const
     {
       // TODO (Part 2.3):
       // Fill in the intersect function.
+      double t0 = ray.min_t, t1 = ray.max_t;
+      if (!node->bb.intersect(ray, t0, t1))
+      {
+        return false;
+      }
+
+      if (node->isLeaf())
+      {
+        bool hit = false;
+        for (auto p = node->start; p != node->end; p++)
+        {
+          total_isects++;
+          // 图元求交保证每次i都是最近交点,因而不需要在BVH中更新最近交点
+          if ((*p)->intersect(ray, i))
+          {
+            hit = true;
+          }
+        }
+        return hit;
+      }
 
       bool hit = false;
-      for (auto p : primitives)
+      if (node->l->bb.intersect(ray, t0, t1))
       {
-        total_isects++;
-        hit = p->intersect(ray, i) || hit;
+        hit = intersect(ray, i, node->l);
+      }
+      if (node->r->bb.intersect(ray, t0, t1))
+      {
+        hit = intersect(ray, i, node->r) || hit;
       }
       return hit;
     }
-
   } // namespace SceneObjects
 } // namespace CGL
