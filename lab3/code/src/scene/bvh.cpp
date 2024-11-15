@@ -86,8 +86,15 @@ namespace CGL
       }
 
       BVHNode *node = new BVHNode(bbox);
-      node->start = start;
-      node->end = end;
+      // leaf node
+      if (count <= max_leaf_size)
+      {
+        node->start = start;
+        node->end = end;
+        node->l = NULL;
+        node->r = NULL;
+        return node;
+      }
 
       // 选择分割轴
       Vector3D extent = bbox.extent;
@@ -107,13 +114,6 @@ namespace CGL
       }
       split_point /= count;
 
-      // leaf node
-      if (count <= max_leaf_size)
-      {
-        node->l = NULL;
-        node->r = NULL;
-        return node;
-      }
       // internal node
       // 划分左右
       auto mid = std::partition(start, end, [axis, split_point](Primitive *prim)
@@ -122,7 +122,7 @@ namespace CGL
       // 无法根据质心划分时
       if (mid == start || mid == end)
       {
-        mid = start + count / 2;
+        return node;
       }
 
       node->l = construct_bvh(start, mid, max_leaf_size);

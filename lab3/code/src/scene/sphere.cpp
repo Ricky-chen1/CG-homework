@@ -28,14 +28,16 @@ namespace CGL
       {
         return false;
       }
-      t1 = (-b - sqrt(delta)) / (2 * a);
-      t2 = (-b + sqrt(delta)) / (2 * a);
+      double min_t = (-b - sqrt(delta)) / (2 * a);
+      double max_t = (-b + sqrt(delta)) / (2 * a);
 
       // 两点都不在范围内
-      if (t2 < r.min_t || t1 > r.max_t)
+      if (max_t < r.min_t || min_t > r.max_t)
       {
         return false;
       }
+      t1 = min_t;
+      t2 = max_t;
 
       return true;
     }
@@ -50,6 +52,17 @@ namespace CGL
       if (!test(r, t1, t2))
       {
         return false;
+      }
+      
+      if (t2 <= r.max_t && t2 >= r.min_t)
+      {
+        r.max_t = t2;
+      }
+
+      // t1有效时（覆盖t2）
+      if (t1 <= r.max_t && t1 >= r.min_t)
+      {
+        r.max_t = t1;
       }
 
       return true;

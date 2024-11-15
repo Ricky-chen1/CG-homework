@@ -32,37 +32,27 @@ namespace CGL
       // function records the "intersection" while this function only tests whether
       // there is a intersection.
       // 向量应该逆时针顺序
-      Vector3D ab = p2 - p1;
-      Vector3D ac = p1 - p3; // 不应该为p3 - p1
-      Vector3D bc = p3 - p2;
-      double area = cross(ab, ac).norm() / 2;
-      Vector3D face_normal = cross(ab, ac).unit();
-      // 计算 t
-      double t = dot(p1 - r.o, face_normal) / dot(r.d, face_normal);
+      Vector3D E1 = p2 - p1;
+      Vector3D E2 = p3 - p1;
+      Vector3D S = r.o - p1;
+      Vector3D S1 = cross(r.d, E2);
+      Vector3D S2 = cross(S, E1);
 
-      if (t < r.min_t || t > r.max_t)
-      { // 检查 t 是否有效
+      double S1E1 = dot(E1, S1);
+      double b1 = dot(S, S1) / S1E1;
+      double b2 = dot(r.d, S2) / S1E1;
+
+      // 检查三个重心坐标是否在有效范围内
+      if (b1 < 0.0 || b1 > 1.0 || b2 < 0.0 || b2 > 1.0 || b1 + b2 < 0.0 || b1 + b2 > 1.0)
+      {
         return false;
       }
 
-      // 判断交点是否在三角形内
-      Vector3D p = r.o + t * r.d;
-      Vector3D ap = p - p1;
-      Vector3D bp = p - p2;
-      Vector3D cp = p - p3;
+      // 计算交点参数 t
+      double t = dot(E2, S2) / S1E1;
 
-      // 计算叉积
-      double cross1 = cross(ab, ap).z;
-      double cross2 = cross(ac, cp).z;
-      double cross3 = cross(bc, bp).z;
-
-      if ((cross1 >= 0 && cross2 >= 0 && cross3 >= 0) ||
-          (cross1 <= 0 && cross2 <= 0 && cross3 <= 0))
-      {
-        return true;
-      }
-
-      return false;
+      // 检查 t 是否在光线的有效范围内
+      return (t >= r.min_t && t <= r.max_t);
     }
 
     bool Triangle::intersect(const Ray &r, Intersection *isect) const
@@ -70,33 +60,40 @@ namespace CGL
       // Part 1, Task 3:
       // implement ray-triangle intersection. When an intersection takes
       // place, the Intersection data should be updated accordingly
-      if (!has_intersection(r))
+      Vector3D E1 = p2 - p1;
+      Vector3D E2 = p3 - p1;
+      Vector3D S = r.o - p1;
+      Vector3D S1 = cross(r.d, E2);
+      Vector3D S2 = cross(S, E1);
+
+      double S1E1 = dot(E1, S1);
+      double b1 = dot(S, S1) / S1E1;
+      double b2 = dot(r.d, S2) / S1E1;
+
+      // 检查三个重心坐标是否在有效范围内
+      if (b1 < 0.0 || b1 > 1.0 || b2 < 0.0 || b2 > 1.0 || b1 + b2 < 0.0 || b1 + b2 > 1.0)
       {
         return false;
       }
 
-      Vector3D ab = p2 - p1;
-      Vector3D ac = p3 - p1;
-      Vector3D bc = p3 - p2;
-      double area = cross(ab, ac).norm() / 2;
-      Vector3D face_normal = cross(ab, ac).unit();
-      double t = dot(r.o - p1, face_normal) / dot(r.d, face_normal);
-      Vector3D p = r.o + t * r.d;
-      Vector3D ap = p - p1;
-      Vector3D bp = p - p2;
-      Vector3D cp = p - p3;
+      // 计算交点参数 t
+      double t = dot(E2, S2) / S1E1;
 
-      double alpha = cross(ap, bp).norm() / 2 / area;
-      double beta = cross(ap, cp).norm() / 2 / area;
-      double gama = cross(bp, cp).norm() / 2 / area;
-
-      if(t >= r.min_t && t <= r.max_t){
-        r.max_t = t;
+      // 检查 t 是否在光线的有效范围内
+      if (t < r.min_t || t > r.max_t)
+      {
+        return false;
       }
-      isect->bsdf = get_bsdf();
-      isect->t = r.max_t;
+
+      // 更新光线的最大有效距离 r.max_t
+      r.max_t = t;
+      // 更新交点信息
+      isect->t = t;
       isect->primitive = this;
-      isect->n = (alpha * n1 + beta * n2 + (1 - alpha - beta) * n3).unit();
+      isect->bsdf = get_bsdf();
+      // 使用重心坐标插值法线并归一化
+      isect->n = (b1 * n1 + b2 * n2 + (1 - b1 - b2) * n3).unit();
+
       return true;
     }
 

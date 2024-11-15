@@ -54,9 +54,9 @@ Vector3D DiffuseBSDF::f(const Vector3D wo, const Vector3D wi) {
   // This function takes in both wo and wi and returns the evaluation of
   // the BSDF for those two directions.
 
-
-  return Vector3D(1.0);
-
+  // 漫反射模型的BRDF（常量无需用到wo，wi计算）
+  Vector3D BRDF = reflectance / PI;
+  return BRDF;
 }
 
 /**
@@ -69,10 +69,10 @@ Vector3D DiffuseBSDF::sample_f(const Vector3D wo, Vector3D *wi, double *pdf) {
   // After sampling a value for wi, it returns the evaluation of the BSDF
   // at (wo, *wi).
   // You can use the `f` function. The reference solution only takes two lines.
-
-
-  return Vector3D(1.0);
-
+  
+  // 存储采样的入射光线
+  *wi = sampler.get_sample(pdf);
+  return f(wo,*wi);
 }
 
 void DiffuseBSDF::render_debugger_node()

@@ -111,8 +111,7 @@ namespace CGL
   {
     // TODO: Part 3, Task 2
     // Returns the light that results from no bounces of light
-
-    return Vector3D(1.0);
+    return isect.bsdf->get_emission();
   }
 
   Vector3D PathTracer::one_bounce_radiance(const Ray &r,
