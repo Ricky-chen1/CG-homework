@@ -67,6 +67,7 @@ namespace CGL
 
     // w_out points towards the source of the ray (e.g.,
     // toward the camera if this is a primary ray)
+    // hit_p是在世界坐标系下
     const Vector3D hit_p = r.o + r.d * isect.t;
     const Vector3D w_out = w2o * (-r.d);
 
@@ -79,8 +80,37 @@ namespace CGL
     // TODO (Part 3): Write your sampling loop here
     // TODO BEFORE YOU BEGIN
     // UPDATE `est_radiance_global_illumination` to return direct lighting instead of normal shading
+    // 我们将在半球内均匀
+    // 采样光线方向。当前只需关心直接照明，因此只需要检查从 hit_p 出发的采样光线是
+    // 否与光源相交。一旦估计了入射光的数量，就可以使用反射方程（BRDF）来计算出射
+    // 光的比重了。
+    // 均匀半球采样的概率密度函数
+    double pdf = 1 / (2 * PI);
+    for (int i = 0; i < num_samples; i++)
+    {
+      // object space vector wi,wo
+      Vector3D w_in = hemisphereSampler->get_sample();
+      // 判断光源是否在采样射线上（min_t设置为一个较小值）
+      Ray sample_ray(hit_p, (o2w * w_in).unit());
+      sample_ray.min_t = EPS_F;
 
-    return Vector3D(1.0);
+      Intersection new_isect;
+      bool is_isected = bvh->intersect(sample_ray, &new_isect);
+      // 采样的射线和包围盒相交了
+      if (is_isected)
+      {
+        // 入射光的radiance (光源的emission)
+        Vector3D L_in = new_isect.bsdf->get_emission();
+        Vector3D fr = isect.bsdf->f(w_out, w_in);
+        // 计算光线方向与法线的余弦
+        double cos_theta = dot(sample_ray.d, isect.n);
+
+        // 当前方向的光线对出射radiance的贡献（利用反射/渲染方程）
+        L_out += Vector3D(L_in.x * fr.x, L_in.y * fr.y, L_in.z * fr.z) * cos_theta / pdf;
+      }
+    }
+    L_out /= num_samples;
+    return L_out;
   }
 
   Vector3D
@@ -120,8 +150,12 @@ namespace CGL
     // TODO: Part 3, Task 3
     // Returns either the direct illumination by hemisphere or importance sampling
     // depending on `direct_hemisphere_sample`
-
-    return Vector3D(1.0);
+    direct_hemisphere_sample = true;
+    if (direct_hemisphere_sample)
+    {
+      return estimate_direct_lighting_hemisphere(r, isect);
+    }
+    return estimate_direct_lighting_importance(r, isect);
   }
 
   Vector3D PathTracer::at_least_one_bounce_radiance(const Ray &r,
@@ -161,7 +195,7 @@ namespace CGL
     if (!bvh->intersect(r, &isect))
       return envLight ? envLight->sample_dir(r) : L_out;
 
-    L_out = (isect.t == INF_D) ? debug_shading(r.d) : normal_shading(isect.n);
+    L_out = (isect.t == INF_D) ? debug_shading(r.d) : zero_bounce_radiance(r, isect) + one_bounce_radiance(r, isect);
 
     // TODO (Part 3): Return the direct illumination.
 
