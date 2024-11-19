@@ -25,7 +25,8 @@ namespace CGL
     double t_enter = std::max({tx_min, ty_min, tz_min});
     double t_exit = std::min({tx_max, ty_max, tz_max});
 
-    if (t_enter < t_exit && t_exit >= 0)
+    // 进入时间小于等于出包围盒时间即认为相交（有个测试点）
+    if (t_enter <= t_exit && t_exit >= 0)
     {
       t0 = t_enter;
       t1 = t_exit;

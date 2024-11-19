@@ -71,7 +71,6 @@ Vector3D DiffuseBSDF::sample_f(const Vector3D wo, Vector3D *wi, double *pdf) {
   // You can use the `f` function. The reference solution only takes two lines.
   
   // 存储采样的入射光线
-  *pdf = 1.0 / (2.0 * PI);
   *wi = sampler.get_sample(pdf);
   return f(wo,*wi);
 }

@@ -102,7 +102,7 @@ namespace CGL
         // 入射光的radiance (光源的emission)
         Vector3D L_in = new_isect.bsdf->get_emission();
         Vector3D fr = isect.bsdf->f(w_out, w_in);
-        // 计算光线方向与法线的余弦
+        // 计算光线方向与法线的余弦（世界坐标下）
         double cos_theta = dot(sample_ray.d, isect.n);
 
         // 当前方向的光线对出射radiance的贡献（利用反射/渲染方程）
@@ -132,8 +132,63 @@ namespace CGL
     const Vector3D hit_p = r.o + r.d * isect.t;
     const Vector3D w_out = w2o * (-r.d);
     Vector3D L_out;
+  
+    // 投射光线、计算求交、计算cos时使用世界坐标系下的采样光线
+    // 求物体表面材质（BSDF）时使用对象坐标系
 
-    return Vector3D(1.0);
+    // 采样所有光源
+    int light_num = 0;
+    for (auto light: scene->lights)
+    {
+      light_num ++;
+      // 点光源
+      if (light->is_delta_light())
+      {
+        Vector3D w_in;
+        double pdf;
+        double dist;
+        Vector3D L_in = light->sample_L(hit_p, &w_in, &dist, &pdf);
+        // 世界坐标系下的w_in
+        Ray new_ray(hit_p, w_in);
+        new_ray.min_t = EPS_F;
+        new_ray.max_t = dist - EPS_F;
+        Intersection new_isect;
+        Vector3D fr = isect.bsdf->f(w_out, w2o * w_in);
+        double cos_theta = dot(w_in, isect.n);
+        // 入射光没有被遮挡
+        if (!bvh->intersect(new_ray, &new_isect))
+        {
+          // 计算对出射光的贡献
+          L_out += Vector3D(L_in.x * fr.x, L_in.y * fr.y, L_in.z * fr.z) * cos_theta / pdf;
+        }
+      }
+      else
+      {
+        // 单位面积光源采样数
+        for (int i = 0; i < ns_area_light; i++)
+        {
+          Vector3D w_in;
+          double pdf;
+          double dist;
+          Vector3D L_in = light->sample_L(hit_p, &w_in, &dist, &pdf);
+          Ray new_ray(hit_p, w_in);
+          new_ray.min_t = EPS_F;
+          new_ray.max_t = dist - EPS_F;
+          Intersection new_isect;
+          Vector3D fr = isect.bsdf->f(w_out, w2o * w_in);
+          double cos_theta = dot(w_in, isect.n);
+          // 入射光没有被遮挡
+          if (!bvh->intersect(new_ray, &new_isect))
+          {
+            // 计算对出射光的贡献
+            L_out += Vector3D(L_in.x * fr.x, L_in.y * fr.y, L_in.z * fr.z) * cos_theta / pdf;
+          }
+        }
+        // 对单个面光源采样数归一化
+        L_out /= ns_area_light;
+      }
+    }
+    return L_out;
   }
 
   Vector3D PathTracer::zero_bounce_radiance(const Ray &r,
@@ -150,7 +205,7 @@ namespace CGL
     // TODO: Part 3, Task 3
     // Returns either the direct illumination by hemisphere or importance sampling
     // depending on `direct_hemisphere_sample`
-    direct_hemisphere_sample = true;
+    direct_hemisphere_sample = false;
     if (direct_hemisphere_sample)
     {
       return estimate_direct_lighting_hemisphere(r, isect);
@@ -198,7 +253,6 @@ namespace CGL
     L_out = (isect.t == INF_D) ? debug_shading(r.d) : zero_bounce_radiance(r, isect) + one_bounce_radiance(r, isect);
 
     // TODO (Part 3): Return the direct illumination.
-
     // TODO (Part 4): Accumulate the "direct" and "indirect"
     // parts of global illumination into L_out rather than just direct
 
