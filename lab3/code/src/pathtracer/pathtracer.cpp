@@ -132,15 +132,15 @@ namespace CGL
     const Vector3D hit_p = r.o + r.d * isect.t;
     const Vector3D w_out = w2o * (-r.d);
     Vector3D L_out;
-  
+
     // 投射光线、计算求交、计算cos时使用世界坐标系下的采样光线
     // 求物体表面材质（BSDF）时使用对象坐标系
 
     // 采样所有光源
     int light_num = 0;
-    for (auto light: scene->lights)
+    for (auto light : scene->lights)
     {
-      light_num ++;
+      light_num++;
       // 点光源
       if (light->is_delta_light())
       {
@@ -228,6 +228,35 @@ namespace CGL
     // TODO: Part 4, Task 2
     // Returns the one bounce radiance + radiance from extra bounces at this point.
     // Should be called recursively to simulate extra bounces.
+    if (r.depth <= 0)
+    {
+      return Vector3D(0, 0, 0);
+    }else if(r.depth == 1){
+      return one_bounce_radiance(r, isect);
+    }
+    L_out = one_bounce_radiance(r,isect);
+    // 投射光线
+    Vector3D w_in;
+    double pdf;
+    // 随机采样入射光线方向（一开始交点为hit_p）
+    Vector3D fr = isect.bsdf->sample_f(w_out, &w_in, &pdf);
+    Ray new_ray(hit_p, (o2w * w_in).unit());
+    new_ray.min_t = EPS_F;
+    new_ray.depth = r.depth - 1;
+
+    Intersection new_isect;
+    double p = 0.34;
+    if (bvh->intersect(new_ray, &new_isect))
+    {
+      double cos_theta = dot(new_ray.d, isect.n);
+      Vector3D L_in = at_least_one_bounce_radiance(new_ray, new_isect);
+      if (isAccumBounces){
+        L_out += Vector3D(L_in.x * fr.x,L_in.y * fr.y,L_in.z * fr.z) * cos_theta / pdf;
+      }else if(r.depth == max_ray_depth){
+        Vector3D L_in = new_isect.bsdf -> get_emission();
+        L_out += Vector3D(L_in.x * fr.x,L_in.y * fr.y,L_in.z * fr.z) * cos_theta / pdf;
+      }
+    }
 
     return L_out;
   }
@@ -250,7 +279,7 @@ namespace CGL
     if (!bvh->intersect(r, &isect))
       return envLight ? envLight->sample_dir(r) : L_out;
 
-    L_out = (isect.t == INF_D) ? debug_shading(r.d) : zero_bounce_radiance(r, isect) + one_bounce_radiance(r, isect);
+    L_out = (isect.t == INF_D) ? debug_shading(r.d) : zero_bounce_radiance(r, isect) + at_least_one_bounce_radiance(r, isect);
 
     // TODO (Part 3): Return the direct illumination.
     // TODO (Part 4): Accumulate the "direct" and "indirect"
@@ -281,6 +310,7 @@ namespace CGL
       random.y += origin.y;
       // 该路径上光线的radiance
       Ray r = camera->generate_ray(random.x / sampleBuffer.w, random.y / sampleBuffer.h);
+      r.depth = max_ray_depth;
       total_radiance += est_radiance_global_illumination(r);
     }
 
