@@ -245,16 +245,15 @@ namespace CGL
     new_ray.depth = r.depth - 1;
 
     Intersection new_isect;
-    double p = 0.34;
+    // 终止率为0.3
+    double cp = 0.7;
     if (bvh->intersect(new_ray, &new_isect))
     {
       double cos_theta = dot(new_ray.d, isect.n);
-      Vector3D L_in = at_least_one_bounce_radiance(new_ray, new_isect);
-      if (isAccumBounces){
-        L_out += Vector3D(L_in.x * fr.x,L_in.y * fr.y,L_in.z * fr.z) * cos_theta / pdf;
-      }else if(r.depth == max_ray_depth){
-        Vector3D L_in = new_isect.bsdf -> get_emission();
-        L_out += Vector3D(L_in.x * fr.x,L_in.y * fr.y,L_in.z * fr.z) * cos_theta / pdf;
+      // 当俄罗斯轮盘决定继续时递归调用，第二个条件保证至少弹射一次
+      if (coin_flip(cp) || r.depth == max_ray_depth){
+        Vector3D L_in = at_least_one_bounce_radiance(new_ray, new_isect);
+        L_out += Vector3D(L_in.x * fr.x,L_in.y * fr.y,L_in.z * fr.z) * cos_theta / pdf / cp;
       }
     }
 
