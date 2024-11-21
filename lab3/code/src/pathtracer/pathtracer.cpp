@@ -256,7 +256,6 @@ namespace CGL
         L_out += Vector3D(L_in.x * fr.x,L_in.y * fr.y,L_in.z * fr.z) * cos_theta / pdf / cp;
       }
     }
-
     return L_out;
   }
 
