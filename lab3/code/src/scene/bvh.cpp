@@ -230,7 +230,6 @@ namespace CGL
         {
           for (auto p = node->start; p != node->end; p++)
           {
-            total_isects++; // 计数光线与图元的总求交次数
             if ((*p)->intersect(ray, i))
             {
               hit = true;
@@ -241,7 +240,7 @@ namespace CGL
         {
           if (node->l)
             stack.push(node->l);
-          if (node->l)
+          if (node->r)
             stack.push(node->r);
         }
       }
